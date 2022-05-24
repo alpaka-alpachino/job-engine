@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Результат</title>
+</head>
+<style>
+    body {
+        background-color: #515354;
+    }
+
+    div{
+        display: flex;
+        align-items: center;
+        width: 40%;
+        margin: 0 auto;
+    }
+
+    .test-name{
+        text-align: center;
+        font-family: Monospace,sans-serif;
+        width: 40%;
+        margin: 0 auto;
+        color: white;
+        background-color: #313231;
+        padding: 10px;
+    }
+
+    .instruction{
+        width: 40%;
+        font-family: Monospace,sans-serif;
+        font-size: medium;
+        margin: 0 auto;
+        color: white;
+        background-color: #313231;
+        padding: 10px;
+    }
+
+    .space {
+        color: white;
+        padding: 5px;
+    }
+
+</style>
+
+<body>
+
+<h3 class="test-name">Ваші результати</h3>
+<p class="space"></p>
+
+<p class ="instruction">Формула Вашого професійного типу:</p>
+<div class="instruction">
+    <p>{{ .ComplexType}}</p>
+</div>
+
+<p class="space"></p>
+
+<p class ="instruction">Тип що найбільш характеризує Вашу особистість:</p>
+<div class="instruction">
+    <p>Набрана кількість балів - {{ .FrontScore }}. {{ .FrontDescription}}</p>
+</div>
+
+<p class="space"></p>
+
+<p class ="instruction">Перелік професій що підходять Вашому типу особистості та відповідний їм коефіцієнт працевлаштування згідно ринку праці:</p>
+
+{{- range $index, $val := .Professions }}
+<div class="instruction">
+    <p> {{ $index }}: {{ $val.VUIndex }} </p>
+</div>
+
+{{- end }}
+
+<p class="space"></p>
+
+<p class ="instruction">Типи з яким Ваші показники мають співпадіння в меншій мірі:</p>
+<div class="instruction">
+    <p>Набрана кількість балів - {{ .SideScore }}. {{ .SideDescription}}</p>
+    <p>Набрана кількість балів - {{ .BehindScore }}. {{ .BehindDescription}}</p>
+</div>
+
+</body>
+</html>
