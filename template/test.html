@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Тест {{.Name}}</title>
+</head>
+<style>
+    body {
+        background-color: #515354;
+    }
+
+    div{
+        display: flex;
+        align-items: center;
+        width: 40%;
+        margin: 0 auto;
+    }
+
+    input[type=radio] {
+        width: 25%;
+        height: 1.5em;
+    }
+
+    .test-name{
+        text-align: center;
+        font-family: Monospace,sans-serif;
+        width: 40%;
+        margin: 0 auto;
+        color: white;
+        background-color: #313231;
+        padding: 10px;
+    }
+
+    .instruction{
+        width: 40%;
+        font-family: Monospace,sans-serif;
+        font-size: medium;
+        margin: 0 auto;
+        color: white;
+        background-color: #313231;
+        padding: 10px;
+    }
+
+    .color-pair-block {
+        color: white;
+        background-color: #313231;
+        font-family: Monospace,sans-serif;
+        font-size: medium;
+        padding: 15px;
+        border-radius: 2px;
+        box-shadow: 2px 2px 20px 20px #383938;
+    }
+
+    .color-variant {
+        padding: 4px;
+        border-radius: 2px;
+    }
+
+    .space {
+        color: white;
+        padding: 5px;
+    }
+
+    .submit{
+        margin: 0 auto;
+        border-radius: 8px;
+        font-family: Monospace,sans-serif;
+        font-size: medium;
+        background-color: #313231;
+        padding: 14px 20px;
+        color: #e7e7e7;
+        transition-duration: 0.4s;
+    }
+
+    .submit:hover {
+        background-color: #e7e7e7;
+        color: black;
+    }
+
+</style>
+
+<body>
+
+<h3 class="test-name">Тест {{.Name}}</h3>
+<form method="POST">
+    <p class="instruction">Оберіть по одній професії (ту що більше Вам до вподоби) з наступних пар:</p>
+    <p class="space"></p>
+
+    {{- range $index, $val := .Questions }}
+    <div class="color-pair-block">
+
+    {{- range $indexInternal, $valInternal := .Variants }}
+
+    <div class="color-variant">
+        <input  type="radio" id="choice"
+               name={{ $index }} value={{ $valInternal.Variant }}>
+        <label  for="choice">{{ $valInternal.Variant }}</label>
+    </div>
+    {{- end }}
+    </div>
+    <p class="space">
+    {{- end }}
+
+    <p class="instruction">
+
+    <div class="instruction">
+    <button class="submit" type="submit">Submit</button>
+    </div>
+
+    <p class="instruction">
+
+</form>
+
+</body>
+</html>
