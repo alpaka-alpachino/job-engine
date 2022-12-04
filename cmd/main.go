@@ -5,7 +5,6 @@ import (
 	"github.com/alpaka-alpachino/job-engine/internal/server"
 	"github.com/alpaka-alpachino/job-engine/internal/service"
 	"github.com/alpaka-alpachino/job-engine/internal/tests"
-	"github.com/xuri/excelize/v2"
 	"go.uber.org/zap"
 	"html/template"
 	"log"
@@ -36,12 +35,7 @@ func main() {
 	// Initialise frontend templates
 	t := template.Must(template.ParseFiles("template/test.html", "template/result.html"))
 
-	f, err := excelize.OpenFile("internal/service/data/prof.xlsx")
-	if err != nil {
-		l.With(err).Fatal("Can't open xlsx professions file")
-	}
-
-	categories, err := service.GetProfessionsMap(f, "Дані", 5)
+	categories, err := service.GetProfessionsMap()
 	if err != nil {
 		l.With(err).Fatal("Can't get professions' categories")
 	}
