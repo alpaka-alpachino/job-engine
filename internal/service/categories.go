@@ -9,6 +9,9 @@ import (
 )
 
 const (
+	tablePath = "internal/service/data/prof.xlsx"
+	sheetName = "Дані"
+
 	jobNameRowIndex         int = 1
 	vacancyRowIndex         int = 3
 	unemployedRowIndex      int = 4
@@ -17,7 +20,12 @@ const (
 	firstJob int = 19
 )
 
-func GetProfessionsMap(f *excelize.File, sheetName string, minCount int) (map[string]models.Category, error) {
+func GetProfessionsMap() (map[string]models.Category, error) {
+	f, err := excelize.OpenFile(tablePath)
+	if err != nil {
+		return nil, err
+	}
+
 	rows, err := f.GetRows(sheetName)
 	if err != nil {
 		return nil, err
