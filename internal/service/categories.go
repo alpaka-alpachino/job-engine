@@ -1,7 +1,7 @@
-package data
+package service
 
 import (
-	"math"
+	"github.com/alpaka-alpachino/job-engine/internal/models"
 	"strconv"
 	"strings"
 
@@ -17,32 +17,13 @@ const (
 	firstJob int = 19
 )
 
-type Category struct { // то по каким ключевым словам мы ищем в таблице
-	Name            string // перше слово-паттерн
-	Vacancies       int
-	Unemployed      int
-	UnemployedMen   int
-	UnemployedWomen int
-	VUIndex         float64 // вакансии поделить на безработных если больше то вакансий больше
-	Profs           []Prof
-}
-
-type Prof struct { // то что будем показывать юзеру
-	Name            string
-	Vacancies       int
-	Unemployed      int
-	UnemployedMen   int
-	UnemployedWomen int
-	VUIndex         float64
-}
-
-func GetProfessionsMap(f *excelize.File, sheetName string, minCount int) (map[string]Category, error) {
+func GetProfessionsMap(f *excelize.File, sheetName string, minCount int) (map[string]models.Category, error) {
 	rows, err := f.GetRows(sheetName)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
-	m := make(map[string]Category)
+	m := make(map[string]models.Category)
 
 	for i, row := range rows {
 		if i < firstJob {
@@ -51,7 +32,7 @@ func GetProfessionsMap(f *excelize.File, sheetName string, minCount int) (map[st
 
 		vacancies, err := strconv.Atoi(row[vacancyRowIndex])
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
 
 		if vacancies == 0 {
@@ -73,12 +54,12 @@ func GetProfessionsMap(f *excelize.File, sheetName string, minCount int) (map[st
 
 		unemployed, err := strconv.Atoi(row[unemployedRowIndex])
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
 
 		unemployedWomen, err := strconv.Atoi(row[unemployedWomenRowIndex])
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
 
 		unemployedMen := unemployed - unemployedWomen
@@ -89,13 +70,13 @@ func GetProfessionsMap(f *excelize.File, sheetName string, minCount int) (map[st
 		}
 
 		if category, ok := m[categoryName]; ok {
-			c := Category{
+			c := models.Category{
 				Name:            category.Name,
 				Vacancies:       category.Vacancies + vacancies,
 				Unemployed:      category.Unemployed + unemployed,
 				UnemployedMen:   category.UnemployedMen + unemployedMen,
 				UnemployedWomen: category.UnemployedWomen + unemployedWomen,
-				Profs: append(category.Profs, Prof{
+				Profs: append(category.Profs, models.Prof{
 					Name:            name,
 					Vacancies:       vacancies,
 					Unemployed:      unemployed,
@@ -107,13 +88,13 @@ func GetProfessionsMap(f *excelize.File, sheetName string, minCount int) (map[st
 
 			m[categoryName] = c
 		} else {
-			category := Category{
+			category := models.Category{
 				Name:            categoryName,
 				Vacancies:       vacancies,
 				Unemployed:      unemployed,
 				UnemployedMen:   unemployedMen,
 				UnemployedWomen: unemployedWomen,
-				Profs: []Prof{{
+				Profs: []models.Prof{{
 					Name:            name,
 					Vacancies:       vacancies,
 					Unemployed:      unemployed,
@@ -132,28 +113,15 @@ func GetProfessionsMap(f *excelize.File, sheetName string, minCount int) (map[st
 		m[name] = category
 	}
 
-	FilterByVacancyCount(m, 5)
+	filterByVacancyCount(m, 5)
 
 	return m, nil
 }
 
-func FilterByVacancyCount(data map[string]Category, min int) {
+func filterByVacancyCount(data map[string]models.Category, min int) {
 	for key, value := range data {
 		if len(value.Profs) < min {
 			delete(data, key)
 		}
 	}
-}
-
-func GetCategoriesByNames(nameList []string, data map[string]Category) map[string]Category {
-	m := make(map[string]Category)
-
-	for _, name := range nameList {
-		if category, ok  := data[name]; ok {
-			category.VUIndex=math.Round(category.VUIndex*100)/100
-			m[name] = category
-		}
-	}
-
-	return m
 }
