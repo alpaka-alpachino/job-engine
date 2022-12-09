@@ -11,21 +11,23 @@ import (
 const professionsByTypesPath = "internal/service/data/professions-by-types.json"
 
 type Service struct {
-	normalizer  *models.Normalizer
-	professions *models.ByTypes
-	categories  map[string]models.Category
+	normalizer        *models.Normalizer
+	professions       *models.ByTypes
+	categories        map[string]models.Category
+	professionsWorkUA map[string]int
 }
 
-func NewService(normalizer *models.Normalizer, categories map[string]models.Category) (*Service, error) {
+func NewService(normalizer *models.Normalizer, categories map[string]models.Category, professionsWorkUA map[string]int) (*Service, error) {
 	professions, err := getProfessionsByType()
 	if err != nil {
 		return nil, err
 	}
 
 	return &Service{
-		normalizer:  normalizer,
-		professions: professions,
-		categories:  categories,
+		normalizer:        normalizer,
+		professions:       professions,
+		categories:        categories,
+		professionsWorkUA: professionsWorkUA,
 	}, nil
 }
 
@@ -75,7 +77,6 @@ func (s *Service) GetProfile(profileMatches map[string]int) (models.Profile, err
 			profile.FrontScore = profileMatches[front]
 			profile.FrontDescription = v.Description
 			profile.Professions = getCategoriesByNames(v.Professions, s.categories)
-			//profile.Professions = strings.Join(v.Professions, ", ")
 		} else if v.ProfessionType == profile.Side {
 			profile.SideScore = profileMatches[side]
 			profile.SideDescription = v.Description
@@ -104,6 +105,7 @@ func getProfessionsByType() (*models.ByTypes, error) {
 func getCategoriesByNames(nameList []string, data map[string]models.Category) map[string]models.Category {
 	m := make(map[string]models.Category)
 
+	// TODO include workUA results
 	for _, name := range nameList {
 		if category, ok := data[name]; ok {
 			category.VUIndex = math.Round(category.VUIndex*100) / 100
