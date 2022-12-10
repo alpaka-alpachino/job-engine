@@ -51,14 +51,14 @@
 
 <p class ="instruction">Формула Вашого професійного типу:</p>
 <div class="instruction">
-    <p>{{ .ComplexType}}</p>
+    <p>{{ .Profile.ComplexType}}</p>
 </div>
 
 <p class="space"></p>
 
-<p class ="instruction">Тип що найбільш характеризує Вашу особистість:</p>
+<p class ="instruction">Тип що найбільш характеризує Вашу професійну особистість:</p>
 <div class="instruction">
-    <p>Набрана кількість балів - {{ .FrontScore }}. {{ .FrontDescription}}</p>
+    <p>{{ .Profile.FrontDescription}}</p>
 </div>
 
 <p class="space"></p>
@@ -67,7 +67,14 @@
 
 {{- range $index, $val := .Professions }}
 <div class="instruction">
-    <p> {{ $index }}: {{ $val.VUIndex }} </p>
+    <p> {{ $val.Name }}:
+        <br>
+        код професії - {{ $val.Code }}
+        <br>
+        кількість вакансій на WorkUA - {{ $val.VacanciesWorkUA }}
+        <br>
+        індекс працевлаштування - {{ $val.VUIndex }}
+    </p>
 </div>
 
 {{- end }}
@@ -76,8 +83,8 @@
 
 <p class ="instruction">Типи з яким Ваші показники мають співпадіння в меншій мірі:</p>
 <div class="instruction">
-    <p>Набрана кількість балів - {{ .SideScore }}. {{ .SideDescription}}</p>
-    <p>Набрана кількість балів - {{ .BehindScore }}. {{ .BehindDescription}}</p>
+    <p>{{ .Profile.SideDescription}}</p>
+    <p>{{ .Profile.BehindDescription}}</p>
 </div>
 
 </body>

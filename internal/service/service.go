@@ -1,37 +1,38 @@
 package service
 
 import (
-	"bufio"
-	"encoding/json"
 	"github.com/alpaka-alpachino/job-engine/internal/models"
-	"math"
-	"os"
+	"github.com/alpaka-alpachino/job-engine/internal/tests/data"
 )
 
-const professionsByTypesPath = "internal/service/data/professions-by-types.json"
+const (
+	minVacanciesCount      = 10
+	professionsByTypesPath = "internal/service/data/professions-by-types.json"
+)
 
 type Service struct {
-	normalizer        *models.Normalizer
-	professions       *models.ByTypes
-	categories        map[string]models.Category
-	professionsWorkUA map[string]int
+	normalizer           *models.Normalizer
+	professionsStatistic map[string][]models.ProfessionStatistic
+	professionsWorkUA    []models.ProfessionWorkUA
+	mapping              map[string][]string
 }
 
-func NewService(normalizer *models.Normalizer, categories map[string]models.Category, professionsWorkUA map[string]int) (*Service, error) {
-	professions, err := getProfessionsByType()
-	if err != nil {
-		return nil, err
-	}
+func NewService(
+	normalizer *models.Normalizer,
+	professions map[string][]models.ProfessionStatistic,
+	professionsWorkUA []models.ProfessionWorkUA,
+	mapping map[string][]string,
+) (*Service, error) {
 
 	return &Service{
-		normalizer:        normalizer,
-		professions:       professions,
-		categories:        categories,
-		professionsWorkUA: professionsWorkUA,
+		normalizer:           normalizer,
+		professionsStatistic: professions,
+		professionsWorkUA:    professionsWorkUA,
+		mapping:              mapping,
 	}, nil
 }
 
-func (s *Service) GetProfile(profileMatches map[string]int) (models.Profile, error) {
+func (s *Service) normalizeProfileMatches(profileMatches map[string]int) {
 	for k, v := range profileMatches {
 		for _, vN := range s.normalizer.Normalizer {
 			if k == vN.Name {
@@ -45,8 +46,12 @@ func (s *Service) GetProfile(profileMatches map[string]int) (models.Profile, err
 			}
 		}
 	}
+}
 
+func (s *Service) GetProfile(profileMatches map[string]int) (models.Profile, error) {
 	var front, side, behind string
+
+	s.normalizeProfileMatches(profileMatches)
 
 	for k, v := range profileMatches {
 		if k != front {
@@ -65,53 +70,136 @@ func (s *Service) GetProfile(profileMatches map[string]int) (models.Profile, err
 	}
 
 	profile := models.Profile{
-		Front:  front,
-		Side:   side,
-		Behind: behind,
+		Front:             front,
+		FrontDescription:  data.PsychoTypes[front],
+		Side:              side,
+		SideDescription:   data.PsychoTypes[side],
+		Behind:            behind,
+		BehindDescription: data.PsychoTypes[behind],
 	}
 
 	profile.ComplexType = front + side + behind
 
-	for _, v := range s.professions.ByTypes {
-		if v.ProfessionType == profile.Front {
-			profile.FrontScore = profileMatches[front]
-			profile.FrontDescription = v.Description
-			profile.Professions = getCategoriesByNames(v.Professions, s.categories)
-		} else if v.ProfessionType == profile.Side {
-			profile.SideScore = profileMatches[side]
-			profile.SideDescription = v.Description
-		} else if v.ProfessionType == profile.Behind {
-			profile.BehindScore = profileMatches[behind]
-			profile.BehindDescription = v.Description
-		}
-	}
-
 	return profile, nil
 }
 
-func getProfessionsByType() (*models.ByTypes, error) {
-	professions := models.ByTypes{}
-	file, _ := os.Open(professionsByTypesPath)
-	r := bufio.NewReader(file)
-	err := json.NewDecoder(r).Decode(&professions)
-	if err != nil {
-		return nil, err
-	}
-	file.Close()
+func (s *Service) SearchWorkUAProfessions(p models.Profile) ([]models.ProfessionWorkUA, error) {
+	profs := s.searchWorkUAProfessionsByCodes(s.searchCodesByTypes([]string{p.ComplexType}, s.mapping))
 
-	return &professions, nil
+	vacanciesCount := s.getVacanciesCount(profs)
+
+	if vacanciesCount < minVacanciesCount {
+		switch len(p.ComplexType) {
+		case 1:
+			profs = append(profs, s.searchWorkUAProfessionsByCodes(
+				s.searchCodesByTypes([]string{p.Front}, s.mapping))...)
+		case 2:
+			profs = append(profs, s.searchWorkUAProfessionsByCodes(
+				s.searchCodesByTypes([]string{p.Front + p.Side}, s.mapping))...)
+			if s.getVacanciesCount(profs) < minVacanciesCount {
+				profs = append(profs, s.searchWorkUAProfessionsByCodes(
+					s.searchCodesByTypes([]string{
+						p.Front,
+						p.Side,
+					}, s.mapping))...)
+			}
+		case 3:
+			profs = append(profs, s.searchWorkUAProfessionsByCodes(
+				s.searchCodesByTypes([]string{
+					p.Front + p.Side,
+					p.Front + p.Behind,
+					p.Side + p.Behind,
+				}, s.mapping))...)
+
+			if s.getVacanciesCount(profs) < minVacanciesCount {
+				profs = append(profs, s.searchWorkUAProfessionsByCodes(
+					s.searchCodesByTypes([]string{
+						p.Front,
+						p.Side,
+						p.Behind,
+					}, s.mapping))...)
+			}
+		}
+
+	}
+
+	return profs, nil
 }
 
-func getCategoriesByNames(nameList []string, data map[string]models.Category) map[string]models.Category {
-	m := make(map[string]models.Category)
+func (s *Service) GetProfessionStatisticByWorkUAProfessions(profs []models.ProfessionWorkUA) ([]models.ProfessionStatistic, error) {
+	uniqueCodes := make(map[string]struct{})
+	for _, prof := range profs {
+		uniqueCodes[prof.Code] = struct{}{}
+	}
 
-	// TODO include workUA results
-	for _, name := range nameList {
-		if category, ok := data[name]; ok {
-			category.VUIndex = math.Round(category.VUIndex*100) / 100
-			m[name] = category
+	ps := make([]models.ProfessionStatistic, 0)
+
+	for code := range uniqueCodes {
+		ps = append(ps, s.professionsStatistic[code]...)
+	}
+
+	return ps, nil
+}
+
+func (s *Service) searchWorkUAProfessionsByCodes(codes []string) []models.ProfessionWorkUA {
+	m := make([]models.ProfessionWorkUA, 0)
+	for _, code := range codes {
+		for _, prof := range s.professionsWorkUA {
+			if prof.Code == code {
+				m = append(m, prof)
+			}
 		}
 	}
 
 	return m
+}
+
+func (s *Service) searchCodesByTypes(types []string, mapping map[string][]string) []string {
+	uniqueCodes := make(map[string]struct{})
+
+	for k, v := range mapping {
+		for _, t := range types {
+			if k == t {
+				for _, v := range v {
+					uniqueCodes[v] = struct{}{}
+				}
+			}
+		}
+	}
+
+	codes := make([]string, 0, len(uniqueCodes))
+
+	for code := range uniqueCodes {
+		codes = append(codes, code)
+	}
+
+	return codes
+}
+
+func (s *Service) getVacanciesCount(p []models.ProfessionWorkUA) int {
+	vacancies := 0
+	for _, prof := range p {
+		vacancies += prof.Vacancies
+	}
+
+	return vacancies
+}
+
+func (s *Service) MapProfessions(workUAProfessions []models.ProfessionWorkUA, professionStatistic []models.ProfessionStatistic) []models.Professions {
+	var professions []models.Professions
+
+	for _, vWorkUA := range workUAProfessions {
+		for _, vStatistics := range professionStatistic {
+			if vWorkUA.Code == vStatistics.Code {
+				professions = append(professions, models.Professions{
+					Name:            vStatistics.Name,
+					Code:            vStatistics.Code,
+					VacanciesWorkUA: vWorkUA.Vacancies,
+					VUIndex:         vStatistics.VUIndex,
+				})
+			}
+		}
+	}
+
+	return professions
 }

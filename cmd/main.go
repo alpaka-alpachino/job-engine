@@ -2,10 +2,10 @@ package main
 
 import (
 	"github.com/alpaka-alpachino/job-engine/config"
+	"github.com/alpaka-alpachino/job-engine/internal/scraper"
 	"github.com/alpaka-alpachino/job-engine/internal/server"
 	"github.com/alpaka-alpachino/job-engine/internal/service"
 	"github.com/alpaka-alpachino/job-engine/internal/tests"
-	"github.com/alpaka-alpachino/job-engine/internal/tools"
 	"go.uber.org/zap"
 	"html/template"
 	"log"
@@ -36,22 +36,29 @@ func main() {
 	// Initialise frontend templates
 	t := template.Must(template.ParseFiles("template/test.html", "template/result.html"))
 
-	professionsWorkUA, err := tools.ScrapeWorkUA()
+	professionsStatistic, err := service.GetProfessionsMap()
+	if err != nil {
+		l.With(err).Fatal("Can't get professions")
+	}
+
+	mapping, err := service.GetTypeToCodesMapping()
+	if err != nil {
+		l.With(err).Fatal("Can't get mapping")
+	}
+
+	professionsWorkUA, err := scraper.ScrapeWorkUA()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	categories, err := service.GetProfessionsMap()
-	if err != nil {
-		l.With(err).Fatal("Can't get professions' categories")
-	}
+	//2669
+	professionsWorkUA = scraper.SetCodes(c.SimilarityCoefficient, professionsStatistic, professionsWorkUA)
 
 	normalizer, err := tests.GetNormalizer()
 	if err != nil {
 		l.With(err).Fatal("Can't get normalizer")
 	}
 
-	engineService, err := service.NewService(normalizer, categories, professionsWorkUA)
+	engineService, err := service.NewService(normalizer, professionsStatistic, professionsWorkUA, mapping)
 	if err != nil {
 		l.With(err).Fatal("Can't create service instance")
 	}

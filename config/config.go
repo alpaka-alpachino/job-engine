@@ -5,8 +5,9 @@ import (
 )
 
 type EngineConfig struct {
-	Host string `env:"HOST" envDefault:"0.0.0.0"`
-	Port string `env:"PORT" envDefault:":8080"`
+	Host                  string  `env:"HOST" envDefault:"0.0.0.0"`
+	Port                  string  `env:"PORT" envDefault:":8080"`
+	SimilarityCoefficient float64 `env:"SIMILARITY_COEFFICIENT" envDefault:"0.98"`
 }
 
 func NewEngineConfig() (*EngineConfig, error) {

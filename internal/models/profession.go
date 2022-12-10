@@ -1,12 +1,18 @@
 package models
 
-type ByTypes struct {
-	ByTypes []ProfessionByType `json:"by_types"`
+// ProfessionStatistic is a model to enterprise profession from prof.xls table
+type ProfessionStatistic struct {
+	Name       string
+	Code       string
+	Vacancies  int
+	Unemployed int
+	// vacancies quantity to unemployed (if more then vacancies quantity more)
+	VUIndex float64
 }
 
-// ProfessionByType test types and appropriate professions categories
-type ProfessionByType struct {
-	ProfessionType string   `json:"type"`
-	Description    string   `json:"description"`
-	Professions    []string `json:"professions"`
+// ProfessionWorkUA is a model to enterprise profession from workUA table
+type ProfessionWorkUA struct {
+	Name      string
+	Code      string
+	Vacancies int
 }

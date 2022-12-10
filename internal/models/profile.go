@@ -1,17 +1,11 @@
 package models
 
 type Profile struct {
-	Front       string
-	Side        string
-	Behind      string
-	ComplexType string
-
-	FrontScore        int
+	Front             string
 	FrontDescription  string
-	SideScore         int
+	Side              string
 	SideDescription   string
-	BehindScore       int
+	Behind            string
 	BehindDescription string
-
-	Professions map[string]Category
+	ComplexType       string
 }

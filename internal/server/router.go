@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/alpaka-alpachino/job-engine/internal/models"
 	"github.com/alpaka-alpachino/job-engine/internal/service"
 	"github.com/alpaka-alpachino/job-engine/internal/tests"
 	"github.com/gorilla/mux"
@@ -67,7 +68,26 @@ func newRouter(s *service.Service, t *template.Template) (*mux.Router, error) {
 			return
 		}
 
-		if err := t.ExecuteTemplate(w, "result.html", profile); err != nil {
+		workUAProfessions, err := s.SearchWorkUAProfessions(profile)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		professionStatistic, err := s.GetProfessionStatisticByWorkUAProfessions(workUAProfessions)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		professions := s.MapProfessions(workUAProfessions, professionStatistic)
+
+		summary := models.Summary{
+			Profile:     profile,
+			Professions: professions,
+		}
+
+		if err := t.ExecuteTemplate(w, "result.html", summary); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}).Methods(http.MethodPost)
