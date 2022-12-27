@@ -3,11 +3,11 @@ package service
 import (
 	"github.com/alpaka-alpachino/job-engine/internal/models"
 	"github.com/alpaka-alpachino/job-engine/internal/tests/data"
+	"strings"
 )
 
 const (
-	minVacanciesCount      = 10
-	professionsByTypesPath = "internal/service/data/professions-by-types.json"
+	minVacanciesCount = 10
 )
 
 type Service struct {
@@ -93,6 +93,9 @@ func (s *Service) SearchWorkUAProfessions(p models.Profile) ([]models.Profession
 		case 1:
 			profs = append(profs, s.searchWorkUAProfessionsByCodes(
 				s.searchCodesByTypes([]string{p.Front}, s.mapping))...)
+			if s.getVacanciesCount(profs) < minVacanciesCount {
+				profs = s.extend(profs, p.Front)
+			}
 		case 2:
 			profs = append(profs, s.searchWorkUAProfessionsByCodes(
 				s.searchCodesByTypes([]string{p.Front + p.Side}, s.mapping))...)
@@ -202,4 +205,17 @@ func (s *Service) MapProfessions(workUAProfessions []models.ProfessionWorkUA, pr
 	}
 
 	return professions
+}
+
+func (s *Service) extend(profs []models.ProfessionWorkUA, front string) []models.ProfessionWorkUA {
+	related := make([]string, 0)
+	for t := range s.mapping {
+		if strings.Contains(t, front) {
+			related = append(related, t)
+		}
+	}
+
+	profs = append(profs, s.searchWorkUAProfessionsByCodes(s.searchCodesByTypes(related, s.mapping))...)
+
+	return profs
 }
