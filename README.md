@@ -1,7 +1,7 @@
 # job-engine
 
 ## Description
-Job Engine gives you possibility to pass the test to define your professional type and shows you those that are:
+Job Engine gives you possibility to pass the test to define your professional type and shows you professions that are:
 - appropriate to your professional type
 - in demand on the modern labor market of Ukraine
 
